@@ -50,7 +50,9 @@ int main(int argc, char* argv[]) {
 
 	bool keepRunning = true;
 	
-	for (int i = 0; i < 2; i++) {
+	cv::Mat* depthArray = new cv::Mat[640 * 480];
+
+	for (int i = 0; i < 10; i++) {
 		pxcSenseManager->AcquireFrame();
 		PXCCapture::Sample *sample = pxcSenseManager->QuerySample();
 
@@ -60,15 +62,16 @@ int main(int argc, char* argv[]) {
 
 		cv::Rect myROI(10, 10, 100, 100);
 
+		for (int j = 0;j < frameDepth.rows;j++) {
+			for (int k = 0;k < frameDepth.cols;k++) {
+				depthArray[640 * k + j].push_back(static_cast<uchar>(frameDepth.at<uchar>(j,k)));
+			}
+		}
 		//frameIR = frameIR(myROI);
 		//FILE *fp = fopen("depth.txt", "w+");
 
 		// Declare what you need
-		cv::FileStorage file("some_name.ext", cv::FileStorage::WRITE);
-
-		// Write to file!
-		file << frameDepth;
-
+		
 	    cv::rectangle(frameIR,
 			cv::Point(50, 200),
 			cv::Point(480, 640),
