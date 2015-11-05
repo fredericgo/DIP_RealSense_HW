@@ -50,9 +50,9 @@ int main(int argc, char* argv[]) {
 
 	bool keepRunning = true;
 	
-	cv::Mat* depthArray = new cv::Mat[640 * 480];
+	cv::Mat* depthArray = new cv::Mat[480 * 640];
 
-	for (int i = 0; i < 10; i++) {
+	for (int i = 0; i < 30; i++) {
 		pxcSenseManager->AcquireFrame();
 		PXCCapture::Sample *sample = pxcSenseManager->QuerySample();
 
@@ -62,11 +62,12 @@ int main(int argc, char* argv[]) {
 
 		cv::Rect myROI(10, 10, 100, 100);
 
-		for (int j = 0;j < frameDepth.rows;j++) {
-			for (int k = 0;k < frameDepth.cols;k++) {
-				depthArray[640 * k + j].push_back(static_cast<uchar>(frameDepth.at<uchar>(j,k)));
+		for (int j = 0; j < frameDepth.rows; j++) {
+			for (int k = 0; k < frameDepth.cols; k++) {
+				depthArray[j * 640 + k].push_back<uchar>(static_cast<uchar>(frameDepth.at<uchar>(j, k)));
 			}
 		}
+		
 		//frameIR = frameIR(myROI);
 		//FILE *fp = fopen("depth.txt", "w+");
 
@@ -79,15 +80,28 @@ int main(int argc, char* argv[]) {
 			1,
 			8);
 
-		cv::imshow("IR", frameIR);
-		cv::imshow("Color", frameColor);
-		cv::imshow("Depth", frameDepth);
+		//cv::imshow("IR", frameIR);
+		//cv::imshow("Color", frameColor);
+		//cv::imshow("Depth", frameDepth);
 
 		int key = cv::waitKey(1);
 		if (key == 27)
 			keepRunning = false;
 		pxcSenseManager->ReleaseFrame();
 	}
+	//std::cout << depthArray[1];
+	cv::Scalar mean, stddev;
+	cv::Mat MStddev(cv::Size(640, 480), CV_32FC1);
+
+	for (int j = 0; j < frameDepth.rows; j++) {
+		for (int k = 0; k < frameDepth.cols; k++) {
+			//std::cout << depthArray[j * 640 + k].size() << std::endl;
+			cv::meanStdDev(depthArray[j * 640 + k], mean, stddev);
+			MStddev.at<float>(j, k) = stddev.val[0];
+			//std::cout << stddev.val[0] << std::endl;
+		}
+	}
+
 	pxcSenseManager->Release();
 	return 0;
 
