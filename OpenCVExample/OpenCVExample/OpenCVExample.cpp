@@ -53,6 +53,7 @@ int main(int argc, char* argv[]) {
 	cv::Mat* depthArray = new cv::Mat[480 * 640];
 
 	for (int i = 0; i < 30; i++) {
+		//while (pxcSenseManager->AcquireFrame() >= PXC_STATUS_NO_ERROR);
 		pxcSenseManager->AcquireFrame();
 		PXCCapture::Sample *sample = pxcSenseManager->QuerySample();
 
@@ -80,7 +81,7 @@ int main(int argc, char* argv[]) {
 			1,
 			8);
 
-		//cv::imshow("IR", frameIR);
+		cv::imshow("IR", frameIR);
 		//cv::imshow("Color", frameColor);
 		//cv::imshow("Depth", frameDepth);
 
@@ -102,6 +103,7 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
+	cv::Scalar MeanSdv, Sdv;
 	pxcSenseManager->Release();
 	return 0;
 
