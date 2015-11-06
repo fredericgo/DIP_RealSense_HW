@@ -72,6 +72,7 @@ int main(int argc, char* argv[]) {
 		//frameIR = frameIR(myROI);
 		//FILE *fp = fopen("depth.txt", "w+");
 
+
 		// Declare what you need
 		
 	    cv::rectangle(frameIR,
@@ -80,8 +81,12 @@ int main(int argc, char* argv[]) {
 			cv::Scalar(0, 255, 255),
 			1,
 			8);
+		
+	
+		cv::Mat croppedDepth;
+		croppedDepth = frameDepth(cv::Rect(0, 0, 0, 0)).clone();
 
-		cv::imshow("IR", frameIR);
+		//cv::imshow("IR", frameIR);
 		//cv::imshow("Color", frameColor);
 		//cv::imshow("Depth", frameDepth);
 
@@ -104,6 +109,8 @@ int main(int argc, char* argv[]) {
 	}
 
 	cv::Scalar MeanSdv, Sdv;
+
+
 	pxcSenseManager->Release();
 	return 0;
 
