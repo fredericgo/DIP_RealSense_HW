@@ -33,14 +33,14 @@ cv::Mat PXCImage2CVMat(PXCImage *pxcImage, PXCImage::PixelFormat format)
 int main(int argc, char* argv[]) {
 	cv::Size frameSize = cv::Size(640, 480);
 	float frameRate = 60;
-	int x0 = 180;
-	int y0 = 180;
-	int W = 270;
-	int H = 120;
+	int x0 = 295;
+	int y0 = 255;
+	int W = 110;
+	int H = 55;
 
 	cv::namedWindow("IR", cv::WINDOW_NORMAL);
 	cv::namedWindow("StdDev", cv::WINDOW_NORMAL);
-	cv::namedWindow("Color", cv::WINDOW_NORMAL);
+	//cv::namedWindow("Color", cv::WINDOW_NORMAL);
 	cv::namedWindow("Depth", cv::WINDOW_NORMAL);
 	cv::Mat frameIR = cv::Mat::zeros(frameSize, CV_8UC1);
 	cv::Mat frameColor = cv::Mat::zeros(frameSize, CV_8UC3);
@@ -58,30 +58,37 @@ int main(int argc, char* argv[]) {
 	
 	cv::Mat* depthArray = new cv::Mat[640*480];
 	cv::Mat MStddev8U_C1(cv::Size(W, H), CV_8UC1);
-
-	for (int i = 0;i < 300;i++) {
+	int i = 0;
+	while(true) {
 	//while (pxcSenseManager->AcquireFrame() >= PXC_STATUS_NO_ERROR);
-		pxcSenseManager->AcquireFrame();
+		pxcStatus sts = pxcSenseManager->AcquireFrame(true);
+		if (sts<PXC_STATUS_NO_ERROR) break;
+		if (i > 300) 
+			break;
+		std::cout << "picture " << i << std::endl;
+		i++;
 		PXCCapture::Sample *sample = pxcSenseManager->QuerySample();
 
 		frameIR = PXCImage2CVMat(sample->ir, PXCImage::PIXEL_FORMAT_Y8);
-		frameColor = PXCImage2CVMat(sample->color, PXCImage::PIXEL_FORMAT_RGB24);
-		PXCImage2CVMat(sample->depth, PXCImage::PIXEL_FORMAT_DEPTH_F32).convertTo(frameDepth, CV_8UC1);
+		//frameColor = PXCImage2CVMat(sample->color, PXCImage::PIXEL_FORMAT_RGB24);
+		frameDepth = PXCImage2CVMat(sample->depth, PXCImage::PIXEL_FORMAT_DEPTH_F32);//.convertTo(frameDepth, CV_8UC1);
 
 		cv::Mat croppedDepth;
 		croppedDepth = frameDepth(cv::Rect(x0, y0, W, H)).clone();
 		
+		//std::cout << "depth: " << croppedDepth.at<float>(30, 30) << std::endl;
+
 		for (int j = 0; j < croppedDepth.rows; j++) {
 			for (int k = 0; k < croppedDepth.cols; k++) {
 				if (depthArray[j * W + k].size().height >= 300) continue;//depthArray[j * W + k].pop_back();
-				depthArray[j * W + k].push_back<uchar>(static_cast<uchar>(frameDepth.at<uchar>(j, k)));
+				depthArray[j * W + k].push_back<float>(croppedDepth.at<float>(j, k));
 			}
 		}
 
 		cv::Scalar mean, stddev;
 		cv::Mat MStddev(cv::Size(W, H), CV_32FC1);
 		
-		
+		//std::cout << depthArray[0] << std::endl;
 		for (int j = 0; j < croppedDepth.rows; j++) {
 			for (int k = 0; k < croppedDepth.cols; k++) {
 				//std::cout << depthArray[j * 640 + k].size() << std::endl;
@@ -106,7 +113,7 @@ int main(int argc, char* argv[]) {
 
 		for (int j = 0; j < croppedDepth.rows; j++) {
 			for (int k = 0; k < croppedDepth.cols; k++) {
-				MStddev8U_C1.at<uchar>(j, k) = static_cast<uchar>(255 * MStddev.at<float>(j,k)/ maxVal);
+				MStddev8U_C1.at<uchar>(j, k) = static_cast<uchar>(255 * MStddev.at<float>(j,k)/ 2.55);
 			}
 		}
 		cv::imshow("StdDev", MStddev8U_C1);
@@ -114,8 +121,8 @@ int main(int argc, char* argv[]) {
 		// Declare what you need
 		
 	    cv::rectangle(frameIR,
-			cv::Point(180, 180),
-			cv::Point(450, 300),
+			cv::Point(x0, y0),
+			cv::Point(x0+W,y0+H),
 			cv::Scalar(0, 255, 255),
 			1,
 			8);
@@ -131,30 +138,11 @@ int main(int argc, char* argv[]) {
 		pxcSenseManager->ReleaseFrame();
 	}
 
-	cv::FileStorage fs("test.yml", cv::FileStorage::WRITE);
+	std::cout << "writing file." << std::endl;
+	cv::FileStorage fs("80.yml", cv::FileStorage::WRITE);
 	fs << MStddev8U_C1;
 
-
-	//std::cout << depthArray[1];
-	
-	/*
-	cv::Scalar mean, stddev;
-	cv::Mat MStddev(cv::Size(640, 480), CV_32FC1);
-	for (int j = 0; j < frameDepth.rows; j++) {
-		for (int k = 0; k < frameDepth.cols; k++) {
-			//std::cout << depthArray[j * 640 + k].size() << std::endl;
-			cv::meanStdDev(depthArray[j * 640 + k], mean, stddev);
-			MStddev.at<float>(j, k) = stddev.val[0];
-			//std::cout << stddev.val[0] << std::endl;
-		}
-	}
-	
-	cv::Scalar MeanSdv, Sdv;
-	cv::meanStdDev(MStddev, MeanSdv, Sdv);
-	std::cout << MeanSdv << "," << Sdv << std::endl;
-	*/
-	
-	cv::waitKey(0);
+	//cv::waitKey(0);
 	pxcSenseManager->Release();
 	return 0;
 
