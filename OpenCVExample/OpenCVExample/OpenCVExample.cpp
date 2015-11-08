@@ -33,6 +33,7 @@ cv::Mat PXCImage2CVMat(PXCImage *pxcImage, PXCImage::PixelFormat format)
 int main(int argc, char* argv[]) {
 	cv::Size frameSize = cv::Size(640, 480);
 	float frameRate = 60;
+	/* Set up the rectangle box you want to crop here*/
 	int x0 = 295;
 	int y0 = 255;
 	int W = 110;
@@ -117,8 +118,6 @@ int main(int argc, char* argv[]) {
 			}
 		}
 		cv::imshow("StdDev", MStddev8U_C1);
-
-		// Declare what you need
 		
 	    cv::rectangle(frameIR,
 			cv::Point(x0, y0),
@@ -140,53 +139,10 @@ int main(int argc, char* argv[]) {
 
 	std::cout << "writing file." << std::endl;
 	cv::FileStorage fs("80.yml", cv::FileStorage::WRITE);
-	fs << MStddev8U_C1;
+	fs << "img" << MStddev8U_C1;
 
 	//cv::waitKey(0);
 	pxcSenseManager->Release();
 	return 0;
 
-}
-
-
-
-void histEq() {
- /// Establish the number of bins
-	int histSize = 256;
-
-		  /// Set the ranges ( for B,G,R) )
-	float range[] = { 0, 256 } ;
-	const float* histRange = { range };
-
-	bool uniform = true; bool accumulate = false;
-
-	cv::Mat hist;
-
-		  /// Compute the histograms:
-	//calcHist( &bgr_planes[0], 1, 0, cv::Mat(), hist, 1, &histSize, &histRange, uniform, accumulate );
-		  
-
-		  // Draw the histograms for B, G and R
-	int hist_w = 512; int hist_h = 400;
-	int bin_w = cvRound( (double) hist_w/histSize );
-
-	cv::Mat histImage( hist_h, hist_w, CV_8UC3, cv::Scalar( 0,0,0) );
-
-		  /// Normalize the result to [ 0, histImage.rows ]
-	normalize(hist, hist, 0, histImage.rows, cv::NORM_MINMAX, -1, cv::Mat() );
-		  
-
-		  /// Draw for each channel
-	for( int i = 1; i < histSize; i++ )
-	{
-		line( histImage, cv::Point( bin_w*(i-1), hist_h - cvRound(hist.at<float>(i-1)) ) ,
-						 cv::Point( bin_w*(i), hist_h - cvRound(hist.at<float>(i)) ),
-						 cv::Scalar( 255, 0, 0), 2, 8, 0  );
-	}
-
-		  /// Display
-	cv::namedWindow("calcHist Demo", CV_WINDOW_AUTOSIZE );
-	imshow("calcHist Demo", histImage );
-
-	cv::waitKey(0);
 }
